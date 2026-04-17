@@ -1,5 +1,7 @@
 package com.avtutov.FlightPing.service;
 
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -24,18 +26,33 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 	private final UserService userService;
 	private final FlightService flightService;
 	private final ParserService parserService;
+	private final TelegramBotService telegramBotService;
+	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH);
 	
 	@Transactional
 	@Override
 	public void subscribe(Message message) {
 		
 		String messageText = message.getText();
-		Long telegramId = message.getFrom().getId();
+		Long chatId = message.getChatId();
+		
+		if ("/start".equalsIgnoreCase(messageText)) {
+            User user = userService.getOrCreateUser(message);
+            String welcome = String.format(
+                "👋 <b>Hello, %s!</b>\n\n"
+                + "To subscribe to flight notifications, please send me the flight number and date.\n\n"
+                + "Example:\n<code>LH155 29.03</code>",
+                user.getFirstName()
+            );
+            telegramBotService.sendMessage(chatId, welcome);
+            return;
+        }
 		
 		Optional<FlightParsedData> parsedDataOpt = parserService.parse(messageText);
 		
 		if(parsedDataOpt.isEmpty()) {
-			log.warn("Message from {} could not be parsed: {}", telegramId, messageText);
+			telegramBotService.sendMessage(chatId, "❌ I don't recognize this format. Try again:\n\n"
+					+ "Example:\n<code>LH155 29.03</code>");
 			return;
 		}
 		
@@ -46,7 +63,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 		Flight flight = flightService.getOrCreateFlight(data);
 		
 		if (subscriptionRepository.existsByUserAndFlightAndActiveTrue(user, flight)) {
-            log.info("User {} already subscribed to {}", telegramId, flight.getAirlineCode() + flight.getFlightNumber());
+			telegramBotService.sendMessage(chatId, "⚠️ You are already subscribed to this flight.");
             return;
         }
 		
@@ -56,12 +73,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 				.active(true)
 				.build();
 		subscriptionRepository.save(newSubscription);
-				
-		log.info("Successfull subscription: User {} to flight {}", 
-                user.getFirstName(), flight.getAirlineCode() + flight.getFlightNumber());
 		
+		String formattedDate = flight.getFlightDate().format(DATE_FORMATTER);
+		String successMsg = String.format("🎉 Success!\n\n"
+				+ "I am tracking your flight:\n\n"
+				+ "<b>%s%s on %s</b>\n\n"
+				+ "If any changes occur you'll receive an instant notification!", 
+                flight.getAirlineCode(), flight.getFlightNumber(), formattedDate);
+		telegramBotService.sendMessage(chatId, successMsg);
+				
 	}
-	
-	
 
 }

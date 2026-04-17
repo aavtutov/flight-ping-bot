@@ -1,6 +1,7 @@
 package com.avtutov.FlightPing.service;
 
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,28 +13,30 @@ import com.avtutov.FlightPing.dto.FlightParsedData;
 public class ParserServiceImpl implements ParserService {
 
 	@Override
-	public FlightParsedData parse(String message) {
+	public Optional<FlightParsedData> parse(String messageText) {
 
-		if (message == null || message.isBlank()) {
+		if (messageText == null || messageText.isBlank()) {
 			throw new IllegalArgumentException("Message is empty or blank");
 		}
 
-		String cleanedMessage = message.toUpperCase().replaceAll("[^A-Z0-9]+", " ").trim();
+		String cleanedMessage = messageText.toUpperCase().replaceAll("[^A-Z0-9]+", " ").trim();
 
 		Pattern pattern = Pattern.compile("^([A-Z0-9]{2})\\s*([0-9A-Z]+)\\s+([0-9]{1,2})\\s+([0-9]{1,2})$");
 		Matcher matcher = pattern.matcher(cleanedMessage);
 
 		if (matcher.find()) {
+			try {
+				String airlineCode = matcher.group(1);
+				String flightNumber = normalizeFlightNumber(matcher.group(2));
+				LocalDate date = normalizeDate(matcher.group(3), matcher.group(4));
 
-			String airlineCode = matcher.group(1);
-			String flightNumber = normalizeFlightNumber(matcher.group(2));
-			LocalDate date = normalizeDate(matcher.group(3), matcher.group(4));
-
-			return new FlightParsedData(airlineCode, flightNumber, date);
-
-		} else {
-			throw new IllegalArgumentException("Incorrect message format");
+				return Optional.of(new FlightParsedData(airlineCode, flightNumber, date));
+			} catch (Exception e) {
+				return Optional.empty();
+			}
 		}
+
+		return Optional.empty();
 	}
 
 	private String normalizeFlightNumber(String flight) {

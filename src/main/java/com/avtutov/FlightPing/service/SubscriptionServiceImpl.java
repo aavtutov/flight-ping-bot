@@ -31,7 +31,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 	private final ParserService parserService;
 	private final TelegramBotService telegramBotService;
 	
-	private static final int MAX_SUBSCRIPTIONS = 5;
+	private static final int MAX_SUBSCRIPTIONS = 3;
 	
 	private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM", Locale.ENGLISH);
@@ -62,6 +62,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         		
         		if(flightOpt.isEmpty()) {
         			telegramBotService.sendMessage(chatId, "You're trying to subscribe to non-existent flight.");
+        			return;
         		}
         		
         		Flight flight = flightOpt.get();
@@ -98,14 +99,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             return;
         }
         
-        long activeCount = subscriptionRepository.countByUser_ChatIdAndActiveTrue(chatId);
-        if(activeCount >= MAX_SUBSCRIPTIONS) {
-        	telegramBotService.sendMessage(chatId, 
-                    "🚫 <b>Limit reached!</b>\n" +
-                    "You can only have " + MAX_SUBSCRIPTIONS + " active subscriptions at a time.\n" +
-                    "Use /list to manage them.");
-                return;
-        }
+
 
         Optional<FlightRequestDto> parsedDataOpt = parserService.processUserInput(messageText);
         if (parsedDataOpt.isEmpty()) {
@@ -133,6 +127,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Long chatId = message.getChatId();
         User user = userService.getOrCreateUser(message);
         
+        long activeCount = subscriptionRepository.countByUser_ChatIdAndActiveTrue(chatId);
+        if(activeCount >= MAX_SUBSCRIPTIONS) {
+        	telegramBotService.sendMessage(chatId, 
+                    "🚫 <b>Limit reached!</b>\n" +
+                    "You can only have " + MAX_SUBSCRIPTIONS + " active subscriptions at a time.\n" +
+                    "Use /list to manage them.");
+                return;
+        }
+        
         if (subscriptionRepository.existsByUserAndFlightAndActiveTrue(user, flight)) {
             telegramBotService.sendMessage(chatId, "⚠️ You are already subscribed to this flight.");
             return;
@@ -153,7 +156,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 		
 		for(int i = 0; i < flights.size(); i++) {
 			Flight flight = flights.get(i);
-			message.append(String.format("%d. ✈️ %s - %s %s /subscribe_%d \n", 
+			message.append(String.format("%d. ✈️ <b>%s ➔ %s</b> %s (/subscribe_%d) \n\n", 
 					i + 1,
 					flight.getDepartureAirportIata(),
 					flight.getArrivalAirportIata(),
@@ -161,7 +164,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 					flight.getId()
 					));
 		}
-		message.append("Tap <code>/subscribe_...</code> to select desired one.");
+		message.append("Tap <code>/subscribe_...</code> to select one.");
 		telegramBotService.sendMessage(chatId, message.toString());
 	}
 	

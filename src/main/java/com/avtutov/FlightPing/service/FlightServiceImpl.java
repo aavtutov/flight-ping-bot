@@ -74,10 +74,15 @@ public class FlightServiceImpl implements FlightService {
 		
 //		in other cases just map and add generated aliases (and request code as alias)		
 		List<Flight> newFlights = apiFlights.stream()
-				.map(flightMapper::toEntity).toList();
+				.map(flightMapper::toEntity)
+				.filter(flight -> flight.getDepartureScheduledTimeLocal().toLocalDate().equals(date))
+				.toList();
+		
+		if (newFlights.isEmpty()) {
+	        return Collections.emptyList();
+	    }
 		
 		Set<String> generatedAliases = provideAliasCodes(apiFlights.get(0), requestDto);
-		
 		addAliasesToFlights(newFlights, generatedAliases);
 			
 		return flightRepository.saveAll(newFlights);

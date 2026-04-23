@@ -1,11 +1,15 @@
 package com.avtutov.FlightPing.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
@@ -31,6 +35,11 @@ public class FlightServiceImpl implements FlightService {
 	private final FlightAliasRepository aliasRepository;
 	private final ExternalFlightApiService apiService;
 	private final FlightMapper flightMapper;
+	
+	@Override
+	public Optional<Flight> findById(Long id) {
+		return flightRepository.findById(id);
+	}
 
 	@Transactional
 	@Override
@@ -90,20 +99,32 @@ public class FlightServiceImpl implements FlightService {
 	
 	private Set<String> provideAliasCodes(AeroDataBoxResponse apiDto, FlightRequestDto requestDto) {
 		
-		String fullFlightNumber = apiDto.number();
-		String iata = apiDto.airline() != null ? apiDto.airline().iata() : null;
-		String icao = apiDto.airline() != null ? apiDto.airline().icao() : null;
-		
-		String flightNumberOnly = fullFlightNumber;
-		if (iata != null) flightNumberOnly = flightNumberOnly.replace(iata, "");
-		if (icao != null) flightNumberOnly = flightNumberOnly.replace(icao, "");
-		flightNumberOnly = flightNumberOnly.trim().replaceAll("\\s+", "");
-		
 		Set<String> uniqueCodes = new HashSet<>();
-		
 		uniqueCodes.add(requestDto.flight());
-		if (iata != null) uniqueCodes.add(iata + flightNumberOnly);
-		if (icao != null) uniqueCodes.add(icao + flightNumberOnly);
+		
+		List<String> prefixes = Stream.of(apiDto.airline().iata(), apiDto.airline().icao())
+				.filter(Objects::nonNull)
+				.map(String::toUpperCase)
+				.sorted(Comparator.comparingInt(String::length).reversed()) // to remove the biggest first (AFL123, AFL, and after AF)
+				.toList();
+		
+		String numberOnly = apiDto.number().replaceAll("[^0-9A-Za-z]+", "");
+		for(String prefix : prefixes) {
+			// checks also when prefix consist of digits
+			if (numberOnly.startsWith(prefix)) {
+			    numberOnly = numberOnly.substring(prefix.length());
+			}
+		}
+		
+		List<String> numbers = new ArrayList<>();
+		numbers.add(numberOnly);
+		
+		while(numberOnly.length() < 4) {
+			numberOnly = "0" + numberOnly;
+			numbers.add(numberOnly);
+		}
+		
+		prefixes.forEach(pref -> numbers.forEach(nmb -> uniqueCodes.add(pref + nmb)));
 		
 		return uniqueCodes;
 	}
@@ -112,11 +133,6 @@ public class FlightServiceImpl implements FlightService {
 		for (Flight flight : flights) {
 			aliasCodes.forEach(flight::addAlias);
 		}
-	}
-
-	@Override
-	public Optional<Flight> findById(Long id) {
-		return flightRepository.findById(id);
 	}
 
 }

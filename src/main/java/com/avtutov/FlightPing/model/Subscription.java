@@ -20,11 +20,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "subscriptions")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Subscription {
 
 	@Id

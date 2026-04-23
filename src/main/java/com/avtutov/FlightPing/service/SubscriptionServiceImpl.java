@@ -71,6 +71,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         		telegramBotService.sendMessage(chatId, "I didn't recognize your /subscribe_... command.");
         		return;
         	}
+        	return;
         }
         
         if (messageText.startsWith("/cancel")) {

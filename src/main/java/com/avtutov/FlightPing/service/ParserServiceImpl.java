@@ -2,64 +2,59 @@ package com.avtutov.FlightPing.service;
 
 import java.time.LocalDate;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 
-import com.avtutov.FlightPing.dto.FlightParsedData;
+import com.avtutov.FlightPing.dto.FlightRequestDto;
 
 @Service
 public class ParserServiceImpl implements ParserService {
 
 	@Override
-	public Optional<FlightParsedData> parse(String messageText) {
+	public Optional<FlightRequestDto> processUserInput(String messageText) {
 
-		if (messageText == null || messageText.isBlank()) {
-			throw new IllegalArgumentException("Message is empty or blank");
+		if (messageText == null || !messageText.contains(",")) {
+			return Optional.empty();
 		}
 
-		String cleanedMessage = messageText.toUpperCase().replaceAll("[^A-Z0-9]+", " ").trim();
+		String[] parts = messageText.split(",", 2);
 
-		Pattern pattern = Pattern.compile("^([A-Z0-9]{2})\\s*([0-9A-Z]+)\\s+([0-9]{1,2})\\s+([0-9]{1,2})$");
-		Matcher matcher = pattern.matcher(cleanedMessage);
+		String flight = parts[0].toUpperCase().replaceAll("[^0-9A-Z]+", "");
+		if (!isValidFlight(flight)) {
+			return Optional.empty();
+		}
 
-		if (matcher.find()) {
-			try {
-				String airlineCode = matcher.group(1);
-				String flightNumber = normalizeFlightNumber(matcher.group(2));
-				LocalDate date = normalizeDate(matcher.group(3), matcher.group(4));
+		return parseDate(parts[1]).map(date -> new FlightRequestDto(flight, date));
+	}
 
-				return Optional.of(new FlightParsedData(airlineCode, flightNumber, date));
-			} catch (Exception e) {
+	private boolean isValidFlight(String flight) {
+		return flight.length() >= 3 
+				&& flight.matches(".*\\d.*");
+	}
+
+	private Optional<LocalDate> parseDate(String rawDate) {
+		try {
+			String cleaned = rawDate.replaceAll("[^0-9]+", " ").trim();
+			String[] parts = cleaned.split("\\s+");
+
+			if (parts.length < 2) {
 				return Optional.empty();
 			}
-		}
 
-		return Optional.empty();
-	}
-
-	private String normalizeFlightNumber(String flight) {
-		return flight.replaceFirst("^0+(?!$)", "");
-	}
-
-	private LocalDate normalizeDate(String dayStr, String monthStr) {
-
-		try {
-			int day = Integer.parseInt(dayStr);
-			int month = Integer.parseInt(monthStr);
+			int day = Integer.parseInt(parts[0]);
+			int month = Integer.parseInt(parts[1]);
 			int year = LocalDate.now().getYear();
 
 			LocalDate date = LocalDate.of(year, month, day);
 
-			// if date in past
 			if (date.isBefore(LocalDate.now())) {
 				date = date.plusYears(1);
 			}
 
-			return date;
+			return Optional.of(date);
+
 		} catch (Exception e) {
-			throw new IllegalArgumentException("Incorrect date format");
+			return Optional.empty();
 		}
 	}
 

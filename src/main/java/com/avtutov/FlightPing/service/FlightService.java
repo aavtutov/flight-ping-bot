@@ -1,13 +1,15 @@
 package com.avtutov.FlightPing.service;
 
-import com.avtutov.FlightPing.dto.FlightParsedData;
-import com.avtutov.FlightPing.dto.FlightResponseData;
+import java.util.List;
+import java.util.Optional;
+
+import com.avtutov.FlightPing.dto.FlightRequestDto;
 import com.avtutov.FlightPing.model.Flight;
 
 public interface FlightService {
 	
-	Flight getOrCreateFlight(FlightParsedData data);
+	List<Flight> findOrCreateFlights(FlightRequestDto requestDto);
 	
-	void updateFlightInfo(Flight flight, FlightResponseData freshData);
+	Optional<Flight> findById(Long id);
 
 }

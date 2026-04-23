@@ -6,4 +6,8 @@ public interface SubscriptionService {
 
 	void subscribe(Message message);
 	
+	void showSubscriptions(Long chatId);
+	
+	void cancelSubscription(Long chatId, String indexPart);
+	
 }

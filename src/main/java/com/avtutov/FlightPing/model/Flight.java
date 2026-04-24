@@ -16,6 +16,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -26,8 +27,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "flights", uniqueConstraints = {
-		@UniqueConstraint(name = "uc_flight_departure", columnNames = { "fullFlightNumber", "departureScheduledTimeUtc" }) }
+@Table(name = "flights",
+		uniqueConstraints = {
+				@UniqueConstraint(name = "uc_flight_departure", columnNames = {"fullFlightNumber", "departureScheduledTimeUtc" })},
+		indexes = {
+				@Index(name = "idx_flight_date", columnList = "fullFlightNumber, flightDate")}
 )
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Flight {

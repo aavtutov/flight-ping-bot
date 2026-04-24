@@ -105,12 +105,12 @@ public class FlightServiceImpl implements FlightService {
 		List<String> prefixes = Stream.of(apiDto.airline().iata(), apiDto.airline().icao())
 				.filter(Objects::nonNull)
 				.map(String::toUpperCase)
-				.sorted(Comparator.comparingInt(String::length).reversed()) // to remove the biggest first (AFL123, AFL, and after AF)
+				.sorted(Comparator.comparingInt(String::length).reversed()) // the longest first (AFL123, AFL, and after AF)
 				.toList();
 		
 		String numberOnly = apiDto.number().replaceAll("[^0-9A-Za-z]+", "");
 		for(String prefix : prefixes) {
-			// checks also when prefix consist of digits
+			// checks also when prefix consist of only digits
 			if (numberOnly.startsWith(prefix)) {
 			    numberOnly = numberOnly.substring(prefix.length());
 			}

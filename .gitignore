@@ -36,3 +36,5 @@ build/
 # Config
 application-local.properties
 
+# MacOS
+.DS_Store

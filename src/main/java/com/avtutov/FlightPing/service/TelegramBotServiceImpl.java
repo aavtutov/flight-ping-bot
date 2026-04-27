@@ -83,8 +83,6 @@ public class TelegramBotServiceImpl implements TelegramBotService {
 		
 		String telegramUrl = String.format("/bot%s/setWebhook", botToken);
 		
-		log.info("Attempting to register Telegram webhook: {}", webhookUrl);
-		
 		webClient.post()
 			.uri(uriBuilder -> uriBuilder
 				.path(telegramUrl)
@@ -102,9 +100,7 @@ public class TelegramBotServiceImpl implements TelegramBotService {
 				log.error("Final attempt failed. Webhook NOT registered: {}", e.getMessage());
 				return Mono.empty(); 
 			})
-			.subscribe(result -> log.info("Telegram webhook registered successfully: {}", result),
-				error -> {});
-		
+			.subscribe();
 	}
 	
 }

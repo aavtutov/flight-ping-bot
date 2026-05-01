@@ -15,7 +15,6 @@ import reactor.core.publisher.Mono;
 public class WebClientConfig {
 	
 	private final String telegramBaseUrl;
-	
 	private final String aeroDataBaseUrl;
 	private final String aeroDataApiKey;
 	private final String aeroDataApiHost;
@@ -38,7 +37,7 @@ public class WebClientConfig {
 	    WebClient client = builder.baseUrl(aeroDataBaseUrl)
 	    		.defaultHeader("X-RapidAPI-Key", aeroDataApiKey)
 	    		.defaultHeader("X-RapidAPI-Host", aeroDataApiHost)
-	    		.filter(rateLimitFilter(1100))
+	    		.filter(rateLimitFilter(2000))
 	    		.build();
 	    return new FlightWebClient(client);
 	}

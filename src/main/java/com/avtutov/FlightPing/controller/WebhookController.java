@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import com.avtutov.FlightPing.bot.TelegramUpdateHandler;
 import com.avtutov.FlightPing.dto.external.AeroDataWebhookPayload;
 import com.avtutov.FlightPing.service.SubscriptionService;
 import com.avtutov.FlightPing.service.util.HashService;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class WebhookController {
 
     private final SubscriptionService subscriptionService;
+    private final TelegramUpdateHandler telegramUpdateHandler;
     private final HashService hashService;
     
     @PostMapping("/callback/telegram-update/{hash}")
@@ -29,12 +31,11 @@ public class WebhookController {
     		@RequestBody Update update) {
     	
     	if(!hashService.isTelegramHashValid(hash)) {
+    		log.warn("Invalid Telegram hash received: {}", hash);
     		return ResponseEntity.notFound().build();
     	}
         
-    	if (update.hasMessage() && update.getMessage().hasText()) {
-            subscriptionService.subscribe(update.getMessage());
-        }
+    	telegramUpdateHandler.handleUpdate(update);
     	
     	return ResponseEntity.ok().build();
     }
@@ -46,10 +47,9 @@ public class WebhookController {
     		@RequestBody AeroDataWebhookPayload notification) {
     	
     	if(!hashService.isAerodataHashValid(hash)) {
+    		log.warn("Invalid AeroData hash received: {}", hash);
     		return ResponseEntity.notFound().build();
     	}
-    	
-    	log.info("Received flight update for subscription: {}", notification.subscription().id());
     	
     	subscriptionService.processApiUpdate(notification);
     	

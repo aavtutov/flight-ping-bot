@@ -1,5 +1,6 @@
 package com.avtutov.FlightPing.service;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +57,9 @@ public class FlightServiceImpl implements FlightService {
 			return List.of(existingAlias.get().getFlight());
 		}
 		
-		List<AeroDataFlightResponse> apiFlights = apiService.getFlightInfo(flightCode, date);
+		List<AeroDataFlightResponse> apiFlights = apiService.getFlightInfo(flightCode, date)
+				.block(Duration.ofSeconds(10));
+		
 		if(apiFlights == null || apiFlights.isEmpty()) {
             return Collections.emptyList();
 		}

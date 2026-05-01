@@ -1,12 +1,10 @@
 package com.avtutov.FlightPing.config;
 
-import java.time.Duration;
-
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import com.avtutov.FlightPing.service.TelegramBotService;
+import com.avtutov.FlightPing.bot.TelegramBotService;
 import com.avtutov.FlightPing.service.external.AeroDataBalanceService;
 
 import lombok.RequiredArgsConstructor;
@@ -28,7 +26,6 @@ public class AppStartupRunner {
 		.subscribe();
 		
 		aeroDataBalanceService.getBalance()
-	    .delaySubscription(Duration.ofSeconds(2))
 	    .subscribe(
 	        res -> {
 	            long credits = (res != null) ? res.creditsRemaining() : 0;

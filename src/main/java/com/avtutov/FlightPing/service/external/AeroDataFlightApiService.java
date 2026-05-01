@@ -2,6 +2,7 @@ package com.avtutov.FlightPing.service.external;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -38,12 +39,11 @@ public class AeroDataFlightApiService implements ExternalFlightApiService {
 	}
 	
 	@Override
-	public List<AeroDataFlightResponse> getFlightInfo(String flightNumber, LocalDate date) {
+	public Mono<List<AeroDataFlightResponse>> getFlightInfo(String flightNumber, LocalDate date) {
         
 		String urlPath = String.format("/flights/number/%s/%s", flightNumber, date.toString());
 		
         log.info("Requesting flight info from AeroDataBox: {}", urlPath);
-
         return flightWebClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path(urlPath)
@@ -55,9 +55,10 @@ public class AeroDataFlightApiService implements ExternalFlightApiService {
                 .retrieve()
                 .bodyToFlux(AeroDataFlightResponse.class) 
                 .collectList()
-                .doOnError(e -> log.error("AeroDataBox API error: {}", e.getMessage()))
-                .onErrorResume(e -> Mono.empty())
-                .block();
+                .retryWhen(Retry.backoff(2, Duration.ofSeconds(1))
+                        .filter(e -> !(e instanceof WebClientResponseException)))
+                .doOnError(e -> log.error("❌ AeroDataBox API error for {}: {}", flightNumber, e.getMessage()))
+                .onErrorResume(e -> Mono.just(Collections.emptyList()));
     }
 
 	@Override
@@ -65,6 +66,7 @@ public class AeroDataFlightApiService implements ExternalFlightApiService {
 		
 		var requestBody = new SubscriptionRequest(callBackUrl, 0);
 		
+		log.info("Subscribing to AeroDataBox: {}", callBackUrl);
 		return flightWebClient.post()
 				.uri("/subscriptions/webhook/FlightByNumber/" + flightNumber)
 				.contentType(MediaType.APPLICATION_JSON)
@@ -72,20 +74,27 @@ public class AeroDataFlightApiService implements ExternalFlightApiService {
 				.retrieve()
 		        .bodyToMono(AeroDataSubscriptionResponse.class)
 		        .retryWhen(Retry.backoff(2, Duration.ofSeconds(2))
-		        		.filter(e -> e instanceof WebClientResponseException && 
-                                ((WebClientResponseException) e).getStatusCode().value() == 429))
-		        .doOnSuccess(res -> log.info("✅ Subscribed to {}", flightNumber))
-		        .doOnError(e -> log.error("❌ Failed to subscribe to {}: {}", flightNumber, e.getMessage()));
-		}
+		        		.filter(this::is429Error))
+		        .doOnSuccess(res -> log.debug("API: Subscribed to flightNumber {}", flightNumber))
+		        .doOnError(e -> log.error("❌ API: Failed to subscribe flightNumber {}: {}", flightNumber, e.getMessage()));
+	}
 
 	@Override
 	public Mono<Void> unsubscribeFromFlightAlerts(String subscriptionId) {
+		log.info("Unsubscribing from AeroDataBox: ID={}", subscriptionId);
 		return flightWebClient.delete()
 				.uri("/subscriptions/webhook/" + subscriptionId)
 				.retrieve()
 				.bodyToMono(Void.class)
-				.doOnSuccess(v -> log.info("✅ Successfully unsubscribed from ID: {}", subscriptionId))
-				.doOnError(e -> log.error("❌ Failed to unsubscribe from ID {}: {}", subscriptionId, e.getMessage()));
+				.retryWhen(Retry.backoff(2, Duration.ofSeconds(2))
+						.filter(this::is429Error))
+				.doOnSuccess(v -> log.debug("API: Unsubscribed ID {}", subscriptionId))
+				.doOnError(e -> log.error("❌ API: Failed to unsubscribe ID {}: {}", subscriptionId, e.getMessage()));
+	}
+	
+	private boolean is429Error(Throwable throwable) {
+	    return throwable instanceof WebClientResponseException e && 
+	           e.getStatusCode().value() == 429;
 	}
 
 }

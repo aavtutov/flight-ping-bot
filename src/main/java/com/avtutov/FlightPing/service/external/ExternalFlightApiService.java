@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 
 public interface ExternalFlightApiService {
 	
-	List<AeroDataFlightResponse> getFlightInfo(String flightNumber, LocalDate date);
+	Mono<List<AeroDataFlightResponse>> getFlightInfo(String flightNumber, LocalDate date);
 	
 	Mono<AeroDataSubscriptionResponse> subscribeToFlightAlerts(String flightNumber);
 	

@@ -44,6 +44,8 @@ public class AeroDataBalanceService {
 	            .retrieve()
 	            .bodyToMono(AeroDataBalanceResponse.class)
 	            .timeout(Duration.ofSeconds(5))
+	            .retryWhen(Retry.backoff(2, Duration.ofSeconds(2))
+	            		.filter(this::is429Error))
 	            .defaultIfEmpty(new AeroDataBalanceResponse(0, null, null))
 	            .publishOn(Schedulers.boundedElastic())
 	            .doOnSuccess(response -> {
@@ -61,8 +63,7 @@ public class AeroDataBalanceService {
 	            .bodyToMono(AeroDataBalanceResponse.class)
 	            .timeout(Duration.ofSeconds(10))
 	            .retryWhen(Retry.backoff(2, Duration.ofSeconds(2))
-	            		.filter(e -> e instanceof WebClientResponseException && 
-                                ((WebClientResponseException) e).getStatusCode().value() == 429))
+	            		.filter(this::is429Error))
 	            .publishOn(Schedulers.boundedElastic())
 	            .doOnSuccess(this::updateRedis)
 	            .doOnError(error -> log.error("❌ Refill failed after retries: {}", error.getMessage()));
@@ -92,4 +93,9 @@ public class AeroDataBalanceService {
         redisTemplate.opsForValue().set(BALANCE_KEY, String.valueOf(response.creditsRemaining()));
         redisTemplate.opsForValue().set(LAST_CHECK_KEY, String.valueOf(Instant.now().getEpochSecond()));
     }
+	
+	private boolean is429Error(Throwable throwable) {
+	    return throwable instanceof WebClientResponseException e && 
+	           e.getStatusCode().value() == 429;
+	}
 }

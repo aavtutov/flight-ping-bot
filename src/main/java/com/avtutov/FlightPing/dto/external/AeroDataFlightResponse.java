@@ -3,7 +3,7 @@ package com.avtutov.FlightPing.dto.external;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record AeroDataBoxResponse(
+public record AeroDataFlightResponse(
 		
 		FlightPoint departure,
 		FlightPoint arrival,

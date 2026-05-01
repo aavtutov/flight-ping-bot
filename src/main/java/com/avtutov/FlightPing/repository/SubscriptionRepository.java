@@ -18,6 +18,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
 	boolean existsByUserAndFlightAndActiveTrue(User user, Flight flight);
 	
+	boolean existsByApiSubscriptionIdAndActiveTrue(String externalId);
+	
 	List<Subscription> findAllByUserAndActiveTrue(User user);
 	
 	List<Subscription> findAllByFlightAndActiveTrue(Flight flight);
@@ -25,6 +27,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 	long countByUser_ChatIdAndActiveTrue(Long chatId);
 	
 	List<Subscription> findAllByUser_ChatIdAndActiveTrue(Long chatId);
+	
+	List<Subscription> findAllByApiSubscriptionIdAndActiveTrue(String externalId);
 	
 	@Modifying
 	@Transactional

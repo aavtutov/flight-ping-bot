@@ -15,7 +15,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.ValueMapping;
 
-import com.avtutov.FlightPing.dto.external.AeroDataBoxResponse;
+import com.avtutov.FlightPing.dto.external.AeroDataFlightResponse;
 import com.avtutov.FlightPing.dto.external.FlightStatus;
 import com.avtutov.FlightPing.model.Flight;
 import com.avtutov.FlightPing.model.InternalFlightStatus;
@@ -72,7 +72,7 @@ public interface FlightMapper {
 
 	@Mapping(target = "arrivalRevisedTimeUtc", source = "arrival.revisedTime.utc", qualifiedByName = "toInstant")
 	@Mapping(target = "arrivalRevisedTimeLocal", source = "arrival.revisedTime.local", qualifiedByName = "toLocalDateTime")
-	Flight toEntity(AeroDataBoxResponse response);
+	Flight toEntity(AeroDataFlightResponse response);
 
 	@ValueMapping(source = "Expected", target = "EXPECTED")
 	@ValueMapping(source = "EnRoute", target = "ENROUTE")

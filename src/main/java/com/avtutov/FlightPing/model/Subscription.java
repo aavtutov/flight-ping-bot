@@ -35,6 +35,8 @@ public class Subscription {
 	@JoinColumn(name = "flight_id", nullable = false)	
 	private Flight flight;
 	
+	private String apiSubscriptionId;
+	
     @Builder.Default
     private boolean active = true;
 

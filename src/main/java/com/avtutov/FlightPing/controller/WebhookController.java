@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import com.avtutov.FlightPing.dto.external.AeroDataWebhookPayload;
 import com.avtutov.FlightPing.service.SubscriptionService;
 import com.avtutov.FlightPing.service.util.HashService;
 
@@ -42,18 +43,17 @@ public class WebhookController {
     public ResponseEntity<Void> onFlightUpdateReceived(
     		
     		@PathVariable String hash,
-    		@RequestBody Update update) {
+    		@RequestBody AeroDataWebhookPayload notification) {
     	
     	if(!hashService.isAerodataHashValid(hash)) {
     		return ResponseEntity.notFound().build();
     	}
     	
-    	// process flight updates
+    	log.info("Received flight update for subscription: {}", notification.subscription().id());
+    	
+    	subscriptionService.processApiUpdate(notification);
     	
     	return ResponseEntity.ok().build();
     }
-    
-    
-
     
 }

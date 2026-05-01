@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
 import com.avtutov.FlightPing.dto.FlightRequestDto;
-import com.avtutov.FlightPing.dto.external.AeroDataBoxResponse;
+import com.avtutov.FlightPing.dto.external.AeroDataFlightResponse;
 import com.avtutov.FlightPing.mapper.FlightMapper;
 import com.avtutov.FlightPing.model.Flight;
 import com.avtutov.FlightPing.model.FlightAlias;
@@ -56,7 +56,7 @@ public class FlightServiceImpl implements FlightService {
 			return List.of(existingAlias.get().getFlight());
 		}
 		
-		List<AeroDataBoxResponse> apiFlights = apiService.getFlightInfo(flightCode, date);
+		List<AeroDataFlightResponse> apiFlights = apiService.getFlightInfo(flightCode, date);
 		if(apiFlights == null || apiFlights.isEmpty()) {
             return Collections.emptyList();
 		}
@@ -97,7 +97,7 @@ public class FlightServiceImpl implements FlightService {
 		return flightRepository.saveAll(newFlights);
 	}
 	
-	private Set<String> provideAliasCodes(AeroDataBoxResponse apiDto, FlightRequestDto requestDto) {
+	private Set<String> provideAliasCodes(AeroDataFlightResponse apiDto, FlightRequestDto requestDto) {
 		
 		Set<String> uniqueCodes = new HashSet<>();
 		uniqueCodes.add(requestDto.flight());

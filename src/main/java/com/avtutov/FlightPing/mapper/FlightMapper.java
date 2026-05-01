@@ -1,40 +1,17 @@
 package com.avtutov.FlightPing.mapper;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoField;
-
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
 import org.mapstruct.ValueMapping;
 
 import com.avtutov.FlightPing.dto.external.AeroDataFlightResponse;
 import com.avtutov.FlightPing.dto.external.FlightStatus;
 import com.avtutov.FlightPing.model.Flight;
 import com.avtutov.FlightPing.model.InternalFlightStatus;
+import com.avtutov.FlightPing.service.util.TimeUtils;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = TimeUtils.class)
 public interface FlightMapper {
-
-	DateTimeFormatter AERODATA_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mmXXX");
-
-	DateTimeFormatter UTC_FORMATTER = new DateTimeFormatterBuilder().append(DateTimeFormatter.ISO_LOCAL_DATE)
-			.optionalStart().appendLiteral('T').optionalEnd().optionalStart().appendLiteral(' ').optionalEnd()
-			.append(DateTimeFormatter.ISO_LOCAL_TIME).optionalStart().appendOffsetId().optionalEnd().toFormatter()
-			.withZone(ZoneOffset.UTC);
-
-	DateTimeFormatter FLEXIBLE_OFFSET_FORMATTER = new DateTimeFormatterBuilder()
-			.append(DateTimeFormatter.ISO_LOCAL_DATE).optionalStart().appendLiteral('T').optionalEnd().optionalStart()
-			.appendLiteral(' ').optionalEnd().appendValue(ChronoField.HOUR_OF_DAY, 2).appendLiteral(':')
-			.appendValue(ChronoField.MINUTE_OF_HOUR, 2).optionalStart().appendLiteral(':')
-			.appendValue(ChronoField.SECOND_OF_MINUTE, 2).optionalEnd().appendOffsetId().toFormatter();
 
 	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "fullFlightNumber", source = "number")
@@ -88,38 +65,5 @@ public interface FlightMapper {
 	@ValueMapping(source = "CanceledUncertain", target = "CANCELLED_UNCERTAIN")
 	@ValueMapping(source = "Unknown", target = "UNKNOWN")
 	InternalFlightStatus toInternalStatus(FlightStatus apiStatus);
-
-	@Named("toLocalDate")
-	default LocalDate toLocalDate(String localStr) {
-		if (localStr == null || localStr.isBlank())
-			return null;
-		try {
-			return LocalDate.parse(localStr.substring(0, 10), DateTimeFormatter.ISO_LOCAL_DATE);
-		} catch (Exception e) {
-			return null;
-		}
-	}
-
-	@Named("toLocalDateTime")
-	default LocalDateTime toLocalDateTime(String localStr) {
-		if (localStr == null || localStr.isBlank())
-			return null;
-		try {
-			return OffsetDateTime.parse(localStr.trim(), FLEXIBLE_OFFSET_FORMATTER).toLocalDateTime();
-		} catch (DateTimeParseException e) {
-			return null;
-		}
-	}
-
-	@Named("toInstant")
-	default Instant toInstant(String utcStr) {
-		if (utcStr == null || utcStr.isBlank())
-			return null;
-		try {
-			return Instant.from(UTC_FORMATTER.parse(utcStr.trim()));
-		} catch (Exception e) {
-			return null;
-		}
-	}
 
 }

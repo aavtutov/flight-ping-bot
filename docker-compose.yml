@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: flightping-db
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: flightping-cache
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .  
+    container_name: flightping-app
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # DB
+      - SPRING_DATASOURCE_URL=${DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=none
+      # TELEGRAM
+      - TELEGRAM_BOT_USERNAME=${TG_USERNAME_BOT}
+      - TELEGRAM_BOT_TOKEN=${TG_BOT_TOKEN}
+      - TELEGRAM_API_BASE_URL=https://api.telegram.org
+      # REDIS
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      # APP
+      - APP_BASE_URL=${APP_BASE_URL}
+      # AERODATABOX
+      - AERODATABOX_API_KEY=${AERODATABOX_API_KEY}
+      - AERODATABOX_API_HOST=${AERODATABOX_API_HOST}
+      - AERODATABOX_API_BASE_URL=https://aerodatabox.p.rapidapi.com

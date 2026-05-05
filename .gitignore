@@ -32,9 +32,11 @@ build/
 ### VS Code ###
 .vscode/
 
+# MacOS
+.DS_Store
 
 # Config
 application-local.properties
+.env
 
-# MacOS
-.DS_Store
+

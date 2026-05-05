@@ -109,18 +109,19 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     
     @Override
     public void initiateCancellation(User user, String text) {
+    	Long chatId = user.getChatId();
     	List<Subscription> activeSubs = subscriptionRepository.findAllByUserAndActiveTrue(user);
     	
     	if (activeSubs.isEmpty()) {
-            telegramBotService.sendMessage(user.getChatId(), ui.NO_ACTIVE_SUBS);
+            telegramBotService.sendMessage(chatId, ui.NO_ACTIVE_SUBS);
             return;
         }
     	
     	String[] parts = text.split(" ");
         if (parts.length > 1) {
-        	cancelSubscription(user.getChatId(), parts[1]);
+        	cancelSubscription(chatId, parts[1]);
         } else {
-        	telegramBotService.sendMessage(user.getChatId(), ui.CANCEL_FORMAT);
+        	telegramBotService.sendMessage(chatId, ui.formatCancelSubscriptionGuide(activeSubs));
         }
     }
 

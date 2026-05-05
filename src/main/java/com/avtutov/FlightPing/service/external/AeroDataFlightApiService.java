@@ -66,7 +66,7 @@ public class AeroDataFlightApiService implements ExternalFlightApiService {
 		
 		var requestBody = new SubscriptionRequest(callBackUrl, 0);
 		
-		log.info("Subscribing to AeroDataBox: {}", callBackUrl);
+		log.info("Subscribing to AeroDataBox: {}", flightNumber);
 		return flightWebClient.post()
 				.uri("/subscriptions/webhook/FlightByNumber/" + flightNumber)
 				.contentType(MediaType.APPLICATION_JSON)
@@ -81,6 +81,7 @@ public class AeroDataFlightApiService implements ExternalFlightApiService {
 
 	@Override
 	public Mono<Void> unsubscribeFromFlightAlerts(String subscriptionId) {
+		
 		log.info("Unsubscribing from AeroDataBox: ID={}", subscriptionId);
 		return flightWebClient.delete()
 				.uri("/subscriptions/webhook/" + subscriptionId)

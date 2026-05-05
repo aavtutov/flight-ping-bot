@@ -25,7 +25,8 @@ public class FlightMessageFormatter {
             + "<code>ba435, 29/04</code>";
     
     public final String CANCEL_FORMAT = "⚠️ Please, specify number of subscription or cancel all of them at once.\n\n" +
-            "<code>/cancel 1</code>\nor\n<code>/cancel all</code>\n\n";
+            "<code>/cancel 1</code>\nor\n"
+            + "<code>/cancel all</code>\n\n";
     
     public final String FLIGHT_NOT_FOUND = "🚫 Flight not found in system for this date.";
     
@@ -44,9 +45,33 @@ public class FlightMessageFormatter {
 
     public String formatWelcomeMessage(String firstName) {
         return String.format(
-            "👋 <b>Hello, %s!</b>\n\nTo subscribe, send flight and date.\nExample: <code>LH155, 29.03</code>",
+            "👋 <b>Hello, %s!</b>\n\n"
+            + "To subscribe for flight updates, send me the flight number and date.\n\n"
+            + "Example:\n\n"
+            + "<code>ba435, 29/04</code>",
             firstName
         );
+    }
+    
+    public String formatCancelSubscriptionGuide(List<Subscription> subscriptions) {
+    	
+    	StringBuilder sb = new StringBuilder(
+    			"⚠️ Please, specify number of subscription or cancel all of them at once.\n\n"
+                );
+    	for (int i = 0; i < subscriptions.size(); i++) {
+            Flight f = subscriptions.get(i).getFlight();
+            sb.append(String.format("%d. ✈️ <b>%s ➔ %s</b> (%s %s) \n\n",
+                i + 1,
+                f.getDepartureAirportIata(),
+                f.getArrivalAirportIata(),
+                formatDate(f.getDepartureScheduledTimeLocal()),
+                formatTime(f.getDepartureScheduledTimeLocal())
+            ));
+        }
+    	sb.append(
+    			"<code>/cancel 1 (or 2,3)</code>\nor\n"
+                + "<code>/cancel all</code>\n\n");
+    	return sb.toString();
     }
 
     public String formatSuccessSubscription(Flight flight) {

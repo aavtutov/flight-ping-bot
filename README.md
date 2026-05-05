@@ -66,4 +66,6 @@ The app is fully containerized, so it runs anywhere with Docker.
 *   **Persistent data**: Docker volumes to keep your flight subscriptions and user data safe, even if containers restart.
 *   **Secure config**: No hardcoded secrets. All API keys and credentials stay safe in environment variables.
 
+### 🔑 Environment credentials
+
 **Important:** Never share your `.env` file or commit it to version control. The `.gitignore` file included in this project is configured to protect your credentials.
